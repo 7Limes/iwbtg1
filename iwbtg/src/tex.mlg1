@@ -1,0 +1,81 @@
+// Basic texture drawing functions
+
+
+// Draw a full texture.
+fn draw_texture(address, x, y) {
+    let img_width = get(address)
+    let img_height = get(address+1)
+    let img_area = img_width * img_height
+
+    address = address + 2
+    for (let i = 0; i < img_area; i = i + 1) {
+        let pixel_data = get(address+i)
+        let r = pixel_data % 256
+        pixel_data = pixel_data / 256
+        let g = pixel_data % 256
+        pixel_data = pixel_data / 256
+        let b = pixel_data % 256
+
+        color(r, g, b)
+        let px = i % img_width + x
+        let py = i / img_width + y
+        point(px, py)
+    }
+}
+
+// Draw a rectangular region of a texture.
+fn draw_texture_region(address, x, y, rx, ry, rwidth, rheight, flip_x) {
+    let img_width = get(address)
+
+    let pixel_pointer = address + 2 + ry * img_width + rx
+
+    let region_area = rwidth * rheight
+    let width_minus_rwidth = img_width - rwidth
+
+    for (let i = 0; i < region_area; i = i + 1) {
+        if !(i == 0) * (i % rwidth == 0) {
+            pixel_pointer = pixel_pointer + width_minus_rwidth
+        }
+
+        let pixel_data = get(pixel_pointer)
+        let r = pixel_data % 256
+        pixel_data = pixel_data / 256
+        let g = pixel_data % 256
+        pixel_data = pixel_data / 256
+        let b = pixel_data % 256
+
+        if !((r == 1) * (g == 1) * (b == 1)) {
+            let pixel_x = i % rwidth
+            if flip_x {
+                pixel_x = -pixel_x + rwidth - 1
+            }
+            pixel_x = pixel_x + x
+
+            let pixel_y = i / rwidth + y
+            color(r, g, b)
+            point(pixel_x, pixel_y)
+        }
+
+        pixel_pointer = pixel_pointer + 1
+    }
+}
+
+// Draw text with a monospaced font.
+fn draw_text(string, font, x, y) {
+    let cursor_x_position = x
+    let char_width = get(font) / 91  // Divide by number of characters
+    let char_height = get(font + 1)
+
+    let char_pointer = string + 1
+    let string_length = get(string)
+    let string_end = string + string_length + 1
+    while char_pointer < string_end {
+        let char = get(char_pointer)
+        if !(char == 32) {  // Skip spaces
+            let char_x_position = (char - 32) * char_width
+            draw_texture_region(font, cursor_x_position, y, char_x_position, 0, char_width, char_height, 0)
+        }
+        cursor_x_position = cursor_x_position + char_width
+        char_pointer = char_pointer + 1
+    }
+}

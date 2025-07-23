@@ -1,0 +1,233 @@
+fn update_kid_animation_data(anim_data) {
+    let new_anim_ss = get(anim_data)
+    if new_anim_ss == kid_anim_ss {
+        return -1
+    }
+    kid_anim_ss = get(anim_data)
+    kid_anim_frames = get(anim_data+1)
+    kid_anim_frame_interval = get(anim_data+2)
+}
+
+
+fn copy_kid_pixels() {
+    let kid_pixel_x = kid_x / COORD_SCALE
+    let kid_pixel_y = kid_y / COORD_SCALE
+    
+    for (let i = 0; i < KID_PIXEL_BUFFER_SIZE; i = i + 1) {
+        let pixel_x = i % KID_PIXEL_WIDTH + kid_pixel_x
+        let pixel_y = i / KID_PIXEL_WIDTH + kid_pixel_y
+        if (pixel_x < 0) + !(pixel_x < WIDTH) + (pixel_y < 0) + !(pixel_y < HEIGHT) {
+            continue
+        }
+        let pixel = getpixel(pixel_x, pixel_y)
+        set(kid_pixel_buffer+i, pixel)
+    }
+}
+
+
+fn paste_kid_pixels() {
+    let kid_pixel_x = kid_x / COORD_SCALE
+    let kid_pixel_y = kid_y / COORD_SCALE
+
+    for (let i = 0; i < KID_PIXEL_BUFFER_SIZE; i = i + 1) {
+        let pixel = get(kid_pixel_buffer+i)
+        let r = pixel % 256
+        pixel = pixel / 256
+        let g = pixel % 256
+        pixel = pixel / 256
+        let b = pixel % 256
+
+        let pixel_x = i % KID_PIXEL_WIDTH + kid_pixel_x
+        let pixel_y = i / KID_PIXEL_WIDTH + kid_pixel_y
+        color(r, g, b)
+        point(pixel_x, pixel_y)
+    }
+}
+
+
+fn collide_kid(do_x_collision) {
+    let level_data_pointer = get(levels_list+current_level)
+    level_data_pointer = level_data_pointer + LEVEL_OBJ_COUNT_INDEX
+    let level_object_count = get(level_data_pointer)
+    level_data_pointer = level_data_pointer + 1
+
+    let ground_collision_occurred = false
+
+    for (let i = 0; i < level_object_count; i = i + 1) {
+        let obj_id = get(obj_id_array+i)
+        let obj_x = get(obj_x_array+i)
+        let obj_y = get(obj_y_array+i)
+        let obj_width = get(obj_width_array+i)
+        let obj_height = get(obj_height_array+i)
+
+        // Adjust hitbox for spikes
+        let is_spike = obj_id < 4
+        if is_spike {
+            let half_tile = TILE_SIZE * COORD_SCALE / 2
+            if obj_id == 0 {
+                obj_y = obj_y + half_tile
+                obj_height = obj_height - half_tile
+                obj_x = obj_x + SPIKE_HITBOX_MOD
+                obj_width = obj_width - SPIKE_HITBOX_MOD * 2
+            }
+            else if obj_id == 1 {
+                obj_width = obj_width - half_tile
+                obj_y = obj_y + SPIKE_HITBOX_MOD
+                obj_height = obj_height - SPIKE_HITBOX_MOD * 2
+            }
+            else if obj_id == 2 {
+                obj_height = obj_height - half_tile
+                obj_x = obj_x + SPIKE_HITBOX_MOD
+                obj_width = obj_width - SPIKE_HITBOX_MOD * 2
+            }
+            else {
+                obj_x = obj_x + half_tile
+                obj_width = obj_width - half_tile
+                obj_y = obj_y + SPIKE_HITBOX_MOD
+                obj_height = obj_height - SPIKE_HITBOX_MOD * 2
+            }
+            color(255, 0, 0)
+            rect(obj_x / COORD_SCALE, obj_y / COORD_SCALE, obj_width / COORD_SCALE, obj_height / COORD_SCALE)
+        }
+
+        if (obj_x < kid_x + KID_WIDTH) * (kid_x < obj_x + obj_width) *
+            (obj_y < kid_y + KID_HEIGHT) * (kid_y < obj_y + obj_height) {
+            
+            // Hit spike
+            if is_spike {
+                // TODO: death
+                kid_x = 0
+                kid_y = 0
+                break
+            }
+
+            // Handle x collision
+            if do_x_collision {
+                if kid_vx > 0 {
+                    kid_x = obj_x - KID_WIDTH
+                }
+                else {
+                    kid_x = obj_x + obj_width
+                }
+            }
+            // Handle y collision
+            else {
+                if kid_vy > 0 {
+                    kid_y = obj_y - KID_HEIGHT
+                    ground_collision_occurred = true
+                    kid_has_double_jump = true
+                    kid_is_grounded = true
+                }
+                else {
+                    kid_y = obj_y + obj_height
+                    kid_jump_counter = 0
+                }
+                kid_vy = 0
+            }
+            break
+        }
+
+        level_data_pointer = level_data_pointer + 5
+    }
+
+    kid_has_jump = ground_collision_occurred
+}
+
+
+fn move_kid() {
+    // Handle jump
+    if !prev_A * A * !kid_jump_counter {
+        if kid_has_jump {
+            kid_jump_counter = KID_JUMP_TIME
+            kid_has_jump = false
+        }
+        else if kid_has_double_jump {
+            kid_jump_counter = KID_DOUBLE_JUMP_TIME
+            kid_has_double_jump = false
+        }
+    }
+    let prev_A = A
+
+    if kid_jump_counter {
+        kid_jump_counter = kid_jump_counter - DELTA
+        kid_jump_counter = kid_jump_counter * (kid_jump_counter > 0)  // Set to 0 if negative
+        kid_vy = kid_jump_counter * -KID_JUMP_STRENGTH
+        if !A {
+            kid_jump_counter = 0
+            kid_vy = 0
+        }
+    }
+
+    // Horizontal movement
+    if LEFT + RIGHT {
+        kid_facing_left = LEFT + !RIGHT
+    }
+    kid_vx = -KID_SPEED * LEFT + KID_SPEED * RIGHT
+    kid_x = kid_x + kid_vx * DELTA
+    collide_kid(true)
+
+    // Vertical movement
+    kid_vy = kid_vy + KID_GRAVITY
+    kid_vy = (kid_vy < KID_MAX_VY) * kid_vy + (kid_vy >= KID_MAX_VY) * KID_MAX_VY  // Clamp velocity
+    kid_y = kid_y + kid_vy * DELTA
+
+    kid_is_grounded = false
+    collide_kid(false)
+
+    // Animation stuff
+    if !kid_is_grounded {
+        if kid_jump_counter {
+            update_kid_animation_data(ANIM_KID_JUMP)
+        }
+        else {
+            update_kid_animation_data(ANIM_KID_FALL)
+        }
+    }
+    else if kid_vx {
+        update_kid_animation_data(ANIM_KID_WALK)
+    }
+    else {
+        update_kid_animation_data(ANIM_KID_IDLE)
+    }
+}
+
+
+fn next_level_tick() {
+    let level_change = 0
+    let direction = -1
+    if kid_y + KID_HEIGHT < 0 {
+        direction = ENUM_UP
+    }
+    else if kid_x > WIDTH * COORD_SCALE {
+        direction = ENUM_RIGHT
+    }
+    else if kid_y > HEIGHT * COORD_SCALE {
+        direction = ENUM_DOWN
+    }
+    else if kid_x + KID_WIDTH < 0 {
+        direction = ENUM_LEFT
+    }
+
+    if !(direction == -1) {
+        level_change = -(prev_level_direction == direction) + (next_level_direction == direction)    
+        if level_change {
+            current_level = current_level + level_change
+            load_current_level(direction)
+        }
+    }
+}
+
+
+fn draw_kid() {
+    color(0, 0, 255)
+    rect(kid_x / COORD_SCALE, kid_y / COORD_SCALE, KID_PIXEL_WIDTH, KID_PIXEL_HEIGHT)
+
+    kid_anim_timer = (kid_anim_timer + DELTA) % (kid_anim_frames * kid_anim_frame_interval)
+    let current_frame_x = kid_anim_timer / kid_anim_frame_interval * KID_PIXEL_WIDTH
+    draw_texture_region(
+        kid_anim_ss,
+        kid_x / COORD_SCALE, kid_y / COORD_SCALE,
+        current_frame_x, 0, KID_PIXEL_WIDTH, KID_PIXEL_HEIGHT, 
+        kid_facing_left
+    )
+}

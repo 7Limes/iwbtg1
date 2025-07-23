@@ -1,0 +1,85 @@
+// Includes
+include "iwbtg/src/tex"
+
+// General constants
+define true 1
+define false 0
+define COORD_SCALE 1000  // All coordinates are scaled up by this factor for greater precision
+
+define ENUM_UP 0
+define ENUM_RIGHT 1
+define ENUM_DOWN 2
+define ENUM_LEFT 3
+
+// Kid constants
+define KID_WIDTH 25000
+define KID_HEIGHT 25000
+define KID_PIXEL_BUFFER_SIZE 625
+define KID_SPEED 150
+define KID_GRAVITY 25
+define KID_JUMP_STRENGTH 1
+define KID_JUMP_TIME 500  // Milliseconds
+define KID_DOUBLE_JUMP_TIME 300  // Milliseconds
+define KID_MAX_VY 450
+
+define SPIKE_HITBOX_MOD 6000  // Higher value = smaller hitbox
+
+define TILE_SIZE 32
+
+define AMOUNT_LEVELS 10
+define LEVEL_MAX_OBJECTS 100
+
+
+// Load spritesheets
+$SS_KID_IDLE "iwbtg/assets/kid_idle.png"
+$SS_KID_WALK "iwbtg/assets/kid_walk.png"
+$SS_KID_JUMP "iwbtg/assets/kid_jump.png"
+$SS_KID_FALL "iwbtg/assets/kid_fall.png"
+$SS_TILES "iwbtg/assets/tiles.png"
+
+// Load levels
+$LEVEL_DATA "iwbtg/assets/levels.dat"
+
+
+fn define_kid_globals() {
+    global KID_PIXEL_WIDTH = KID_WIDTH / COORD_SCALE
+    global KID_PIXEL_HEIGHT = KID_HEIGHT / COORD_SCALE
+
+    global kid_x = 1000
+    global kid_y = 500
+    global kid_vx = 0
+    global kid_vy = 0
+    global kid_is_grounded = false
+    global kid_has_jump = false
+    global kid_has_double_jump = false
+    global kid_jump_counter = 0
+
+    global kid_facing_left = false
+    global kid_anim_ss = -1
+    global kid_anim_frames = -1
+    global kid_anim_frame_interval = -1
+    global kid_anim_timer = -1
+
+    global kid_pixel_buffer[KID_PIXEL_BUFFER_SIZE]
+
+    global ANIM_KID_IDLE[3] = [SS_KID_IDLE, 4, 160]
+    global ANIM_KID_WALK[3] = [SS_KID_WALK, 6, 160]
+    global ANIM_KID_JUMP[3] = [SS_KID_JUMP, 2, 160]
+    global ANIM_KID_FALL[3] = [SS_KID_FALL, 2, 160]
+}
+
+
+fn define_globals() {
+    define_kid_globals()
+
+    global levels_list[AMOUNT_LEVELS]
+    global current_level = 1
+    global current_level_obj_count = 0
+    global obj_id_array[LEVEL_MAX_OBJECTS]
+    global obj_x_array[LEVEL_MAX_OBJECTS]
+    global obj_y_array[LEVEL_MAX_OBJECTS]
+    global obj_width_array[LEVEL_MAX_OBJECTS]
+    global obj_height_array[LEVEL_MAX_OBJECTS]
+    global prev_level_direction = -1
+    global next_level_direction = -1
+}

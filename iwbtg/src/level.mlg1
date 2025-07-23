@@ -1,0 +1,59 @@
+define LEVEL_OBJ_COUNT_INDEX 2
+
+define SCREEN_WIDTH_TILES 20
+define SCREEN_HEIGHT_TILES 15
+
+
+fn load_levels() {
+    let level_data_pointer = LEVEL_DATA
+    let amount_levels = get(level_data_pointer)
+    level_data_pointer = level_data_pointer + 1
+
+    for (let i = 0; i < amount_levels; i = i + 1) {
+        set(levels_list+i, level_data_pointer)
+        level_data_pointer = level_data_pointer + LEVEL_OBJ_COUNT_INDEX
+        let level_object_count = get(level_data_pointer)
+        level_data_pointer = level_data_pointer + level_object_count * 5 + 1
+    }
+}
+
+
+fn draw_object(obj_id, obj_x, obj_y, obj_width, obj_height) {
+    let obj_texture_x = obj_id * TILE_SIZE
+
+    for (let i = 0; i < obj_height; i = i + 1) {
+        for (let j = 0; j < obj_width; j = j + 1) {
+            let sub_obj_x = j + obj_x
+            let sub_obj_y = i + obj_y
+
+            // Don't draw objects outside of the screen
+            if (sub_obj_x > SCREEN_WIDTH_TILES-1) + (sub_obj_x < 0) + 
+                (sub_obj_y > SCREEN_HEIGHT_TILES-1) + (sub_obj_y < 0) {
+                continue
+            }
+
+            draw_texture_region(SS_TILES,
+                sub_obj_x * TILE_SIZE, sub_obj_y * TILE_SIZE,
+                obj_texture_x, 0, TILE_SIZE, TILE_SIZE,
+                false
+            )
+        }
+    }
+}
+
+
+fn draw_current_level() {
+    // Draw background
+    color(90, 150, 240)
+    rect(0, 0, WIDTH, HEIGHT)
+    
+    // Draw objects
+    for (let i = 0; i < current_level_obj_count; i = i + 1) {
+        let obj_id = get(obj_id_array+i)
+        let obj_x = get(obj_x_array+i) / (COORD_SCALE * TILE_SIZE)
+        let obj_y = get(obj_y_array+i) / (COORD_SCALE * TILE_SIZE)
+        let obj_width = get(obj_width_array+i) / (COORD_SCALE * TILE_SIZE)
+        let obj_height = get(obj_height_array+i) / (COORD_SCALE * TILE_SIZE)
+        draw_object(obj_id, obj_x, obj_y, obj_width, obj_height)
+    }
+}
