@@ -260,20 +260,19 @@ fn move_kid() {
     collide_kid(false)
 
     // Handle animations
+    let new_anim = ANIM_KID_IDLE
     if !kid_is_grounded {
         if kid_jump_counter {
-            update_kid_animation_data(ANIM_KID_JUMP)
+            new_anim = ANIM_KID_JUMP
         }
         else {
-            update_kid_animation_data(ANIM_KID_FALL)
+            new_anim = ANIM_KID_FALL
         }
     }
     else if kid_vx {
-        update_kid_animation_data(ANIM_KID_WALK)
+        new_anim = ANIM_KID_WALK
     }
-    else {
-        update_kid_animation_data(ANIM_KID_IDLE)
-    }
+    update_kid_animation_data(new_anim)
 }
 
 
