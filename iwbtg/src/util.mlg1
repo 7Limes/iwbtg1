@@ -1,0 +1,151 @@
+// Utility functions
+
+
+define TEXT_ALIGN_LEFT 999999
+define TEXT_ALIGN_CENTER -2
+define TEXT_ALIGN_RIGHT -1
+
+
+// Draw a full texture.
+fn draw_texture(address, x, y) {
+    let img_width = get(address)
+    let img_height = get(address+1)
+    let img_area = img_width * img_height
+
+    address = address + 2
+    for (let i = 0; i < img_area; i = i + 1) {
+        let pixel_data = get(address+i)
+        let r = pixel_data % 256
+        pixel_data = pixel_data / 256
+        let g = pixel_data % 256
+        pixel_data = pixel_data / 256
+        let b = pixel_data % 256
+
+        if !((r == 1) * (g == 1) * (b == 1)) {
+            color(r, g, b)
+            let px = i % img_width + x
+            let py = i / img_width + y
+            point(px, py)
+        }
+    }
+}
+
+
+// Draw a rectangular region of a texture.
+fn draw_texture_region(address, x, y, rx, ry, rwidth, rheight, flip_x) {
+    let img_width = get(address)
+
+    let pixel_pointer = address + 2 + ry * img_width + rx
+
+    let region_area = rwidth * rheight
+    let width_minus_rwidth = img_width - rwidth
+
+    for (let i = 0; i < region_area; i = i + 1) {
+        if !(i == 0) * (i % rwidth == 0) {
+            pixel_pointer = pixel_pointer + width_minus_rwidth
+        }
+
+        let pixel_data = get(pixel_pointer)
+        if pixel_data != 65793 {  // Color is not (1, 1, 1)
+            let r = pixel_data % 256
+            pixel_data = pixel_data / 256
+            let g = pixel_data % 256
+            pixel_data = pixel_data / 256
+            let b = pixel_data % 256
+
+            let pixel_x = i % rwidth
+            if flip_x {
+                pixel_x = -pixel_x + rwidth - 1
+            }
+            pixel_x = pixel_x + x
+
+            let pixel_y = i / rwidth + y
+            color(r, g, b)
+            point(pixel_x, pixel_y)
+        }
+
+        pixel_pointer = pixel_pointer + 1
+    }
+}
+
+
+fn _draw_text_character(font, x, y, char, char_width, char_height, scale) {
+    let img_width = get(font)
+
+    let char_x_position = (char - 32) * char_width
+    let pixel_pointer = font + 2 + char_x_position
+
+    let region_area = char_width * char_height
+    let width_minus_char_width = img_width - char_width
+
+    for (let i = 0; i < region_area; i = i + 1) {
+        if !(i == 0) * (i % char_width == 0) {
+            pixel_pointer = pixel_pointer + width_minus_char_width
+        }
+
+        let pixel_data = get(pixel_pointer)
+        if pixel_data != 65793 {  // Color is not (1, 1, 1)
+            let pixel_x = i % char_width * scale + x
+            let pixel_y = i / char_width * scale + y
+            rect(pixel_x, pixel_y, scale, scale)
+        }
+
+        pixel_pointer = pixel_pointer + 1
+    }
+}
+
+
+// Draw text with a monospaced font.
+fn draw_text(string, font, x, y, scale, alignment) {
+    let char_width = get(font) / 91  // Divide by number of characters
+    let char_height = get(font + 1)
+    let string_length = get(string)
+
+    let displayed_text_width = (char_width + 1) * string_length * scale
+    let cursor_x_position = x + displayed_text_width / alignment
+
+    let char_pointer = string + 1
+    let string_end = string + string_length + 1
+    while char_pointer < string_end {
+        let char = get(char_pointer)
+        if !(char == 32) {  // Skip spaces
+            _draw_text_character(font, cursor_x_position, y, char, char_width, char_height, scale)
+        }
+        cursor_x_position = cursor_x_position + (char_width + 1) * scale
+        char_pointer = char_pointer + 1
+    }
+}
+
+
+// Copy a region of the screen into `buffer`.
+fn copy_screen_region(buffer, x, y, rwidth, rheight) {
+    let AREA = rwidth * rheight
+    for (let i = 0; i < AREA; i = i + 1) {
+        let pixel_x = i % rwidth + x
+        let pixel_y = i / rwidth + y
+        if (pixel_x < 0) + !(pixel_x < WIDTH) + (pixel_y < 0) + !(pixel_y < HEIGHT) {
+            continue
+        }
+        let pixel = getpixel(pixel_x, pixel_y)
+        set(buffer+i, pixel)
+    }
+}
+
+
+// Paste a copied region to the screen.
+fn paste_screen_region(buffer, x, y, rwidth, rheight) {
+    let AREA = rwidth * rheight
+    for (let i = 0; i < AREA; i = i + 1) {
+        let pixel = get(buffer+i)
+        let r = pixel % 256
+        pixel = pixel / 256
+        let g = pixel % 256
+        pixel = pixel / 256
+        let b = pixel % 256
+
+        let pixel_x = i % rwidth + x
+        let pixel_y = i / rwidth + y
+        color(r, g, b)
+        point(pixel_x, pixel_y)
+    }
+}

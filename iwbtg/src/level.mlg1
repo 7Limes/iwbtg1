@@ -1,3 +1,6 @@
+include "iwbtg/src/globals"
+
+
 define LEVEL_OBJ_COUNT_INDEX 2
 
 define SCREEN_WIDTH_TILES 20
@@ -18,7 +21,7 @@ fn load_levels() {
 }
 
 
-fn draw_object(obj_id, obj_x, obj_y, obj_width, obj_height) {
+fn draw_level_object(obj_id, obj_x, obj_y, obj_width, obj_height) {
     let obj_texture_x = obj_id * TILE_SIZE
 
     for (let i = 0; i < obj_height; i = i + 1) {
@@ -39,6 +42,16 @@ fn draw_object(obj_id, obj_x, obj_y, obj_width, obj_height) {
             )
         }
     }
+    // Draw debug object outline
+    // color(0, 255, 0)
+    // let debug_x = obj_x * TILE_SIZE
+    // let debug_y = obj_y * TILE_SIZE
+    // let debug_right = debug_x + obj_width * TILE_SIZE
+    // let debug_bottom = debug_y + obj_height * TILE_SIZE
+    // line(debug_x, debug_y, debug_right, debug_y)
+    // line(debug_x, debug_bottom, debug_right, debug_bottom)
+    // line(debug_x, debug_y, debug_x, debug_bottom)
+    // line(debug_right, debug_y, debug_right, debug_bottom)
 }
 
 
@@ -54,6 +67,61 @@ fn draw_current_level() {
         let obj_y = get(obj_y_array+i) / (COORD_SCALE * TILE_SIZE)
         let obj_width = get(obj_width_array+i) / (COORD_SCALE * TILE_SIZE)
         let obj_height = get(obj_height_array+i) / (COORD_SCALE * TILE_SIZE)
-        draw_object(obj_id, obj_x, obj_y, obj_width, obj_height)
+        draw_level_object(obj_id, obj_x, obj_y, obj_width, obj_height)
     }
+}
+
+
+fn load_current_level(direction) {
+    let level_data_pointer = get(levels_list+current_level)
+
+    // Delete bullets
+    set(bullet_directions, 0)
+    set(bullet_directions+1, 0)
+    set(bullet_directions+2, 0)
+    set(bullet_directions+3, 0)
+    bullet_count = 0
+    
+    if !(direction == -1) {
+        if direction == ENUM_UP {
+            kid_y = HEIGHT * COORD_SCALE - KID_HEIGHT
+        }
+        else if direction == ENUM_RIGHT {
+            kid_x = 0
+        }
+        else if direction == ENUM_DOWN {
+            kid_y = 0
+        }
+        else {
+            kid_x = WIDTH * COORD_SCALE - KID_WIDTH
+        }
+    }
+
+    prev_level_direction = get(level_data_pointer)
+    next_level_direction = get(level_data_pointer+1)
+
+    level_data_pointer = level_data_pointer + LEVEL_OBJ_COUNT_INDEX
+    current_level_obj_count = get(level_data_pointer)
+    level_data_pointer = level_data_pointer + 1
+    for (let i = 0; i < current_level_obj_count; i = i + 1) {
+        let obj_id = get(level_data_pointer)
+        let obj_x = get(level_data_pointer+1)
+        let obj_y = get(level_data_pointer+2)
+        obj_x = TILE_SIZE * COORD_SCALE * (obj_x - 256 * (obj_x > 127))
+        obj_y = TILE_SIZE * COORD_SCALE * (obj_y - 256 * (obj_y > 127))
+        let obj_width = TILE_SIZE * COORD_SCALE * get(level_data_pointer+3)
+        let obj_height = TILE_SIZE * COORD_SCALE * get(level_data_pointer+4)
+
+        set(obj_id_array+i, obj_id)
+        set(obj_x_array+i, obj_x)
+        set(obj_y_array+i, obj_y)
+        set(obj_width_array+i, obj_width)
+        set(obj_height_array+i, obj_height)
+        level_data_pointer = level_data_pointer + 5
+    }
+
+    draw_current_level()
+
+    // Set this to zero to avoid drawing save block on new screen
+    hit_save_block_timer = 0
 }

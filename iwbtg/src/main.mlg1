@@ -8,64 +8,42 @@ include "iwbtg/src/level"
 include "iwbtg/src/player"
 
 
-fn load_current_level(direction) {
-    let level_data_pointer = get(levels_list+current_level)
-    
-    if direction == ENUM_UP {
-        kid_y = HEIGHT * COORD_SCALE - KID_HEIGHT
-    }
-    else if direction == ENUM_RIGHT {
-        kid_x = 0
-    }
-    else if direction == ENUM_DOWN {
-        kid_y = 0
-    }
-    else {
-        kid_x = WIDTH * COORD_SCALE - KID_WIDTH
-    }
-
-    prev_level_direction = get(level_data_pointer)
-    next_level_direction = get(level_data_pointer+1)
-
-    level_data_pointer = level_data_pointer + LEVEL_OBJ_COUNT_INDEX
-    current_level_obj_count = get(level_data_pointer)
-    level_data_pointer = level_data_pointer + 1
-    for (let i = 0; i < current_level_obj_count; i = i + 1) {
-        let obj_id = get(level_data_pointer)
-        let obj_x = get(level_data_pointer+1)
-        let obj_y = get(level_data_pointer+2)
-        obj_x = TILE_SIZE * COORD_SCALE * (obj_x - 256 * (obj_x > 127))
-        obj_y = TILE_SIZE * COORD_SCALE * (obj_y - 256 * (obj_y > 127))
-        let obj_width = TILE_SIZE * COORD_SCALE * get(level_data_pointer+3)
-        let obj_height = TILE_SIZE * COORD_SCALE * get(level_data_pointer+4)
-
-        set(obj_id_array+i, obj_id)
-        set(obj_x_array+i, obj_x)
-        set(obj_y_array+i, obj_y)
-        set(obj_width_array+i, obj_width)
-        set(obj_height_array+i, obj_height)
-        level_data_pointer = level_data_pointer + 5
-    }
-
-    draw_current_level()
-}
-
-
 fn start() {
     define_globals()
     load_levels()
     update_kid_animation_data(ANIM_KID_IDLE)
-    load_current_level(true)
+    load_current_level(-1)
     copy_kid_pixels()
 }
 
 
 fn tick() {
-    paste_kid_pixels()
-    move_kid()
-    copy_kid_pixels()
+    reset_tick()
+    
+    if !kid_is_dead {
+        paste_kid_pixels()
+        move_kid()
+        copy_kid_pixels()
 
-    next_level_tick()
+        shoot_bullet_tick()
+        move_bullets()
+        save_block_tick()
 
-    draw_kid()
+        next_level_tick()
+
+        if !kid_is_dead {
+            draw_kid()
+            draw_bullets()
+        }
+    }
+    else {
+        blood_particles_tick()
+        if death_text_timer > 0 {
+            death_text_timer = death_text_timer - DELTA
+            if death_text_timer <= 0 {
+                draw_death_text()
+                death_text_timer = 0
+            }
+        }
+    }
 }

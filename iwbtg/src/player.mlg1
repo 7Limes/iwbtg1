@@ -1,3 +1,8 @@
+include "math"
+include "iwbtg/src/globals"
+include "iwbtg/src/level"
+
+
 fn update_kid_animation_data(anim_data) {
     let new_anim_ss = get(anim_data)
     if new_anim_ss == kid_anim_ss {
@@ -12,16 +17,12 @@ fn update_kid_animation_data(anim_data) {
 fn copy_kid_pixels() {
     let kid_pixel_x = kid_x / COORD_SCALE
     let kid_pixel_y = kid_y / COORD_SCALE
-    
-    for (let i = 0; i < KID_PIXEL_BUFFER_SIZE; i = i + 1) {
-        let pixel_x = i % KID_PIXEL_WIDTH + kid_pixel_x
-        let pixel_y = i / KID_PIXEL_WIDTH + kid_pixel_y
-        if (pixel_x < 0) + !(pixel_x < WIDTH) + (pixel_y < 0) + !(pixel_y < HEIGHT) {
-            continue
-        }
-        let pixel = getpixel(pixel_x, pixel_y)
-        set(kid_pixel_buffer+i, pixel)
-    }
+
+    copy_screen_region(
+        kid_pixel_buffer,
+        kid_pixel_x, kid_pixel_y,
+        KID_PIXEL_WIDTH, KID_PIXEL_HEIGHT
+    )
 }
 
 
@@ -29,19 +30,102 @@ fn paste_kid_pixels() {
     let kid_pixel_x = kid_x / COORD_SCALE
     let kid_pixel_y = kid_y / COORD_SCALE
 
-    for (let i = 0; i < KID_PIXEL_BUFFER_SIZE; i = i + 1) {
-        let pixel = get(kid_pixel_buffer+i)
-        let r = pixel % 256
-        pixel = pixel / 256
-        let g = pixel % 256
-        pixel = pixel / 256
-        let b = pixel % 256
+    paste_screen_region(
+        kid_pixel_buffer,
+        kid_pixel_x, kid_pixel_y,
+        KID_PIXEL_WIDTH, KID_PIXEL_HEIGHT
+    )
+}
 
-        let pixel_x = i % KID_PIXEL_WIDTH + kid_pixel_x
-        let pixel_y = i / KID_PIXEL_WIDTH + kid_pixel_y
-        color(r, g, b)
-        point(pixel_x, pixel_y)
+
+fn kid_death() {
+    copy_kid_pixels()
+    paste_kid_pixels()
+
+    kid_is_dead = true
+    let kid_center_x = kid_x + KID_WIDTH / 2
+    let kid_center_y = kid_y + KID_HEIGHT / 2
+
+    for (let i = 0; i < BLOOD_PARTICLE_COUNT; i = i + 1) {
+        set(blood_particles_x+i, kid_center_x)
+        set(blood_particles_y+i, kid_center_y)
+        let vx = next_rand() % (BLOOD_PARTICLE_VX * 2) - BLOOD_PARTICLE_VX
+        let vy = next_rand() % BLOOD_PARTICLE_VY
+        set(blood_particles_vx+i, vx)
+        set(blood_particles_vy+i, vy)
     }
+
+    death_text_timer = 500
+}
+
+
+fn blood_particles_tick() {
+    for (let i = 0; i < BLOOD_PARTICLE_COUNT; i = i + 1) {
+        let x = get(blood_particles_x+i)
+        if x == -1 {
+            continue
+        }
+
+        let color = next_rand() % BLOOD_COLOR_VAR - (BLOOD_COLOR_VAR / 2) + BLOOD_COLOR
+        color(color, 0, 0)
+
+        let y = get(blood_particles_y+i)
+        let vx = get(blood_particles_vx+i)
+        let vy = get(blood_particles_vy+i)
+
+        let new_vy = vy + BLOOD_PARTICLE_GRAVITY
+        let new_x = x + vx * DELTA
+        let new_y = y + vy * DELTA
+
+        if (new_x < 0) + (new_x > WIDTH*COORD_SCALE) + (new_y > HEIGHT*COORD_SCALE + 10000) {
+            // Delete particle
+            set(blood_particles_x+i, -1)
+            continue
+        }
+        set(blood_particles_x+i, new_x)
+        set(blood_particles_y+i, new_y)
+        set(blood_particles_vy+i, new_vy)
+
+        rect(
+            new_x / COORD_SCALE, new_y / COORD_SCALE, 
+            BLOOD_PARTICLE_SIZE, BLOOD_PARTICLE_SIZE
+        )
+        
+        // Draw more rects in between the previous and current one to fill in gaps.
+        let diff_x = new_x - x
+        let diff_y = new_y - y
+        let dist_x = abs(diff_x)
+        let dist_y = abs(diff_y)
+        let dist = dist_x + dist_y
+        let between_rects = dist / 1500
+        let shift_x, shift_y
+        if !between_rects {
+            continue
+        }
+        shift_x = diff_x / between_rects
+        shift_y = diff_y / between_rects
+        for (let j = 0; j < between_rects; j = j + 1) {
+            let between_x = x + shift_x * j
+            let between_y = y + shift_y * j
+            rect(
+                between_x / COORD_SCALE, between_y / COORD_SCALE, 
+                BLOOD_PARTICLE_SIZE, BLOOD_PARTICLE_SIZE
+            )
+        }
+    }
+}
+
+
+fn draw_death_text() {
+    let death_text_1 = "YOU DIED"
+    let death_text_2 = "Press ENTER to Restart"
+
+    color(32, 32, 32)
+    draw_text(death_text_1, FONT, 323, 103, 3, TEXT_ALIGN_CENTER)
+    draw_text(death_text_2, FONT, 322, 152, 2, TEXT_ALIGN_CENTER)
+    color(255, 255, 255)
+    draw_text(death_text_1, FONT, 320, 100, 3, TEXT_ALIGN_CENTER)
+    draw_text(death_text_2, FONT, 320, 150, 2, TEXT_ALIGN_CENTER)
 }
 
 
@@ -86,8 +170,8 @@ fn collide_kid(do_x_collision) {
                 obj_y = obj_y + SPIKE_HITBOX_MOD
                 obj_height = obj_height - SPIKE_HITBOX_MOD * 2
             }
-            color(255, 0, 0)
-            rect(obj_x / COORD_SCALE, obj_y / COORD_SCALE, obj_width / COORD_SCALE, obj_height / COORD_SCALE)
+            // color(255, 0, 0)
+            // rect(obj_x / COORD_SCALE, obj_y / COORD_SCALE, obj_width / COORD_SCALE, obj_height / COORD_SCALE)
         }
 
         if (obj_x < kid_x + KID_WIDTH) * (kid_x < obj_x + obj_width) *
@@ -95,9 +179,7 @@ fn collide_kid(do_x_collision) {
             
             // Hit spike
             if is_spike {
-                // TODO: death
-                kid_x = 0
-                kid_y = 0
+                kid_death()
                 break
             }
 
@@ -154,13 +236,16 @@ fn move_kid() {
         kid_vy = kid_jump_counter * -KID_JUMP_STRENGTH
         if !A {
             kid_jump_counter = 0
-            kid_vy = 0
+            if kid_vy < KID_JUMP_CUTOFF_VY {
+                kid_vy = KID_JUMP_CUTOFF_VY
+            }
         }
     }
 
     // Horizontal movement
     if LEFT + RIGHT {
         kid_facing_left = LEFT + !RIGHT
+        next_rand()  // Seed RNG with player movement
     }
     kid_vx = -KID_SPEED * LEFT + KID_SPEED * RIGHT
     kid_x = kid_x + kid_vx * DELTA
@@ -174,7 +259,7 @@ fn move_kid() {
     kid_is_grounded = false
     collide_kid(false)
 
-    // Animation stuff
+    // Handle animations
     if !kid_is_grounded {
         if kid_jump_counter {
             update_kid_animation_data(ANIM_KID_JUMP)
@@ -188,6 +273,144 @@ fn move_kid() {
     }
     else {
         update_kid_animation_data(ANIM_KID_IDLE)
+    }
+}
+
+
+fn set_kid_checkpoint(obj_x, obj_y) {
+    kid_save_x = kid_x
+    kid_save_y = kid_y
+    kid_save_level = current_level
+
+    hit_save_block_x = obj_x / (COORD_SCALE * TILE_SIZE)
+    hit_save_block_y = obj_y / (COORD_SCALE * TILE_SIZE)
+    hit_save_block_timer = SAVE_BLOCK_HIT_SPRITE_DURATION
+
+    draw_level_object(SAVE_BLOCK_HIT_ID, hit_save_block_x, hit_save_block_y, 1, 1)
+}
+
+
+fn shoot_bullet_tick() {
+    if !prev_B * B * (bullet_count < MAX_BULLETS) {
+        // Find open slot
+        let new_bullet_direction = -2 * !(!kid_facing_left) + 1
+
+        let KID_CENTER_X = kid_x + KID_WIDTH / 2
+        let KID_CENTER_Y = kid_y + KID_HEIGHT / 2
+        let bullet_x = KID_CENTER_X + 16000 * new_bullet_direction
+
+        for (let i = 0; i < MAX_BULLETS; i = i + 1) {
+            let bullet_dir = get(bullet_directions+i)
+            if bullet_dir == 0 {
+                set(bullet_directions+i, new_bullet_direction)
+                set(bullet_positions_x+i, bullet_x)
+                set(bullet_positions_y+i, KID_CENTER_Y)
+                let pixel_buffer_pointer = bullet_pixel_buffer + i * BULLET_PIXEL_SIZE * BULLET_PIXEL_SIZE
+                copy_screen_region(
+                    pixel_buffer_pointer,
+                    bullet_x / COORD_SCALE, KID_CENTER_Y / COORD_SCALE,
+                    BULLET_PIXEL_SIZE, BULLET_PIXEL_SIZE
+                )
+                break
+            }
+        }
+        bullet_count = bullet_count + 1
+    }
+    let prev_B = B
+}
+
+
+fn collide_bullet(bullet_index, bullet_x, bullet_y) {
+    let level_data_pointer = get(levels_list+current_level)
+    level_data_pointer = level_data_pointer + LEVEL_OBJ_COUNT_INDEX
+    let level_object_count = get(level_data_pointer)
+    level_data_pointer = level_data_pointer + 1
+    
+    for (let i = 0; i < level_object_count; i = i + 1) {
+        let obj_id = get(obj_id_array+i)
+        let obj_x = get(obj_x_array+i)
+        let obj_y = get(obj_y_array+i)
+        let obj_width = get(obj_width_array+i)
+        let obj_height = get(obj_height_array+i)
+        
+        if (bullet_x > obj_x) * (bullet_x < obj_x + obj_width) *
+            (bullet_y > obj_y) * (bullet_y < obj_y + obj_height) {
+            if obj_id == SAVE_BLOCK_ID {
+                set_kid_checkpoint(obj_x, obj_y)
+            }
+            set(bullet_directions+bullet_index, 0)
+            bullet_count = bullet_count - 1  // Delete bullet
+            break
+        }
+    }
+
+}
+
+
+fn move_bullets() {
+    for (let i = 0; i < MAX_BULLETS; i = i + 1) {
+        let bullet_dir = get(bullet_directions+i)
+        if bullet_dir == 0 {
+            continue
+        }
+
+        let pixel_buffer_pointer = bullet_pixel_buffer+i*BULLET_AREA
+
+        let bullet_x = get(bullet_positions_x+i)
+        let bullet_y = get(bullet_positions_y+i)
+
+        paste_screen_region(
+            pixel_buffer_pointer,
+            bullet_x / COORD_SCALE, bullet_y / COORD_SCALE,
+            BULLET_PIXEL_SIZE, BULLET_PIXEL_SIZE
+        )
+
+        let new_bullet_x = bullet_x + BULLET_SPEED * DELTA * bullet_dir
+        if (new_bullet_x < 0) + (new_bullet_x > WIDTH * COORD_SCALE) {
+            // Bullet went off screen; delete
+            set(bullet_directions+i, 0)
+            bullet_count = bullet_count - 1
+            continue
+        }
+        else {
+            collide_bullet(i, new_bullet_x, bullet_y)
+        }
+        set(bullet_positions_x+i, new_bullet_x)
+        copy_screen_region(
+            pixel_buffer_pointer,
+            new_bullet_x / COORD_SCALE, bullet_y / COORD_SCALE,
+            BULLET_PIXEL_SIZE, BULLET_PIXEL_SIZE
+        )
+
+    }
+}
+
+
+fn draw_bullets() {
+    for (let i = 0; i < MAX_BULLETS; i = i + 1) {
+        let bullet_dir = get(bullet_directions+i)
+        if bullet_dir == 0 {
+            continue
+        }
+
+        let bullet_x = get(bullet_positions_x+i) / COORD_SCALE
+        let bullet_y = get(bullet_positions_y+i) / COORD_SCALE
+
+        draw_texture(
+            SPRITE_BULLET,
+            bullet_x, bullet_y
+        )
+    }
+}
+
+
+fn save_block_tick() {
+    if hit_save_block_timer > 0 {
+        hit_save_block_timer = hit_save_block_timer - DELTA
+        if hit_save_block_timer <= 0 {
+            draw_level_object(SAVE_BLOCK_ID, hit_save_block_x, hit_save_block_y, 1, 1)
+            hit_save_block_timer = 0
+        }
     }
 }
 
@@ -213,14 +436,32 @@ fn next_level_tick() {
         if level_change {
             current_level = current_level + level_change
             load_current_level(direction)
+            copy_kid_pixels()
         }
     }
 }
 
 
+fn reset_tick() {
+    if CONTROL1 * !prev_CONTROL1 {
+        paste_kid_pixels()
+        kid_is_dead = false
+        kid_x = kid_save_x
+        kid_y = kid_save_y
+        kid_vx = 0
+        kid_vy = 0
+        kid_jump_counter = 0
+        current_level = kid_save_level
+        load_current_level(-1)
+        copy_kid_pixels()
+    }
+    let prev_CONTROL1 = CONTROL1
+}
+
+
 fn draw_kid() {
-    color(0, 0, 255)
-    rect(kid_x / COORD_SCALE, kid_y / COORD_SCALE, KID_PIXEL_WIDTH, KID_PIXEL_HEIGHT)
+    // color(0, 0, 255)
+    // rect(kid_x / COORD_SCALE, kid_y / COORD_SCALE, KID_PIXEL_WIDTH, KID_PIXEL_HEIGHT)
 
     kid_anim_timer = (kid_anim_timer + DELTA) % (kid_anim_frames * kid_anim_frame_interval)
     let current_frame_x = kid_anim_timer / kid_anim_frame_interval * KID_PIXEL_WIDTH
