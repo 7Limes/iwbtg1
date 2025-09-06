@@ -233,7 +233,9 @@ fn move_kid() {
     if kid_jump_counter {
         kid_jump_counter = kid_jump_counter - DELTA
         kid_jump_counter = kid_jump_counter * (kid_jump_counter > 0)  // Set to 0 if negative
-        kid_vy = kid_jump_counter * -KID_JUMP_STRENGTH
+        let progress_divisor = KID_JUMP_TIME * kid_has_double_jump + KID_DOUBLE_JUMP_TIME * !kid_has_double_jump
+        let jump_progress = kid_jump_counter * 100 / progress_divisor
+        kid_vy = jump_progress * -KID_JUMP_STRENGTH
         if !A {
             kid_jump_counter = 0
             if kid_vy < KID_JUMP_CUTOFF_VY {
