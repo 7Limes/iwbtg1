@@ -48,24 +48,24 @@ define SAVE_BLOCK_ID 9
 define SAVE_BLOCK_HIT_ID 10
 define SAVE_BLOCK_HIT_SPRITE_DURATION 1000
 
-define AMOUNT_LEVELS 10
+define AMOUNT_LEVELS 20  // Space allocated for level data
 define LEVEL_MAX_OBJECTS 100
 
 
 // Load sprites
-$SS_KID_IDLE "iwbtg/assets/kid_idle.png"
-$SS_KID_WALK "iwbtg/assets/kid_walk.png"
-$SS_KID_JUMP "iwbtg/assets/kid_jump.png"
-$SS_KID_FALL "iwbtg/assets/kid_fall.png"
-$SPRITE_BULLET "iwbtg/assets/bullet.png"
+$SS_KID_IDLE img "iwbtg/assets/kid_idle.png"
+$SS_KID_WALK img "iwbtg/assets/kid_walk.png"
+$SS_KID_JUMP img "iwbtg/assets/kid_jump.png"
+$SS_KID_FALL img "iwbtg/assets/kid_fall.png"
+$SPRITE_BULLET img "iwbtg/assets/bullet.png"
 
-$SS_TILES "iwbtg/assets/tiles.png"
+$SS_TILES img "iwbtg/assets/tiles.png"
 
 // Load levels
-$LEVEL_DATA "iwbtg/assets/levels.dat"
+$LEVEL_DATA raw "iwbtg/assets/levels.dat"
 
 // Load font
-$FONT "iwbtg/assets/8x8font.png"
+$FONT img "iwbtg/assets/8x8font.png"
 
 
 fn define_kid_globals() {

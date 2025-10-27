@@ -9,6 +9,7 @@ include "iwbtg/src/player"
 
 
 fn start() {
+    srand(99)
     define_globals()
     load_levels()
     update_kid_animation_data(ANIM_KID_IDLE)
