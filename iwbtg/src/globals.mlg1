@@ -68,66 +68,64 @@ $LEVEL_DATA raw "iwbtg/assets/levels.dat"
 $FONT img "iwbtg/assets/8x8font.png"
 
 
-fn define_kid_globals() {
-    global kid_x = 320 * COORD_SCALE
-    global kid_y = 10 * COORD_SCALE
-    global kid_vx = 0
-    global kid_vy = 0
-    global kid_is_grounded = false
-    global kid_has_jump = false
-    global kid_has_double_jump = false
-    global kid_jump_counter = 0
+// Kid globals
 
-    global kid_is_dead = false
-    global kid_save_x = kid_x
-    global kid_save_y = kid_y
-    global kid_save_level = 0
+global kid_x = 320 * COORD_SCALE
+global kid_y = 10 * COORD_SCALE
+global kid_vx = 0
+global kid_vy = 0
+global kid_is_grounded = false
+global kid_has_jump = false
+global kid_has_double_jump = false
+global kid_jump_counter = 0
 
-    global kid_facing_left = false
-    global kid_anim_ss = -1
-    global kid_anim_frames = -1
-    global kid_anim_frame_interval = -1
-    global kid_anim_timer = -1
+global kid_is_dead = false
+global kid_save_x = kid_x
+global kid_save_y = kid_y
+global kid_save_level = 0
 
-    global kid_pixel_buffer[KID_PIXEL_BUFFER_SIZE]
-    global bullet_pixel_buffer[BULLET_BUFFER_SIZE]
+global kid_facing_left = false
+global kid_anim_ss = -1
+global kid_anim_frames = -1
+global kid_anim_frame_interval = -1
+global kid_anim_timer = -1
 
-    global bullet_count = 0
-    global bullet_positions_x[MAX_BULLETS]
-    global bullet_positions_y[MAX_BULLETS]
-    global bullet_directions[MAX_BULLETS]
+global kid_pixel_buffer[KID_PIXEL_BUFFER_SIZE]
+global bullet_pixel_buffer[BULLET_BUFFER_SIZE]
 
-    global blood_particles_x[BLOOD_PARTICLE_COUNT]
-    global blood_particles_y[BLOOD_PARTICLE_COUNT]
-    global blood_particles_vx[BLOOD_PARTICLE_COUNT]
-    global blood_particles_vy[BLOOD_PARTICLE_COUNT]
+global bullet_count = 0
+global bullet_positions_x[MAX_BULLETS]
+global bullet_positions_y[MAX_BULLETS]
+global bullet_directions[MAX_BULLETS]
 
-    global hit_save_block_x = -1
-    global hit_save_block_y = -1
-    global hit_save_block_timer = 0
+global blood_particles_x[BLOOD_PARTICLE_COUNT]
+global blood_particles_y[BLOOD_PARTICLE_COUNT]
+global blood_particles_vx[BLOOD_PARTICLE_COUNT]
+global blood_particles_vy[BLOOD_PARTICLE_COUNT]
 
-    global death_text_timer = 0
+global hit_save_block_x = -1
+global hit_save_block_y = -1
+global hit_save_block_timer = 0
 
-    global ANIM_KID_IDLE[3] = [SS_KID_IDLE, 4, 100]
-    global ANIM_KID_WALK[3] = [SS_KID_WALK, 6, 100]
-    global ANIM_KID_JUMP[3] = [SS_KID_JUMP, 2, 100]
-    global ANIM_KID_FALL[3] = [SS_KID_FALL, 2, 100]
-}
+global death_text_timer = 0
+
+global ANIM_KID_IDLE[3] = [SS_KID_IDLE, 4, 100]
+global ANIM_KID_WALK[3] = [SS_KID_WALK, 6, 100]
+global ANIM_KID_JUMP[3] = [SS_KID_JUMP, 2, 100]
+global ANIM_KID_FALL[3] = [SS_KID_FALL, 2, 100]
 
 
-fn define_globals() {
-    define_kid_globals()
+// General globals
 
-    global levels_list[AMOUNT_LEVELS]
-    global current_level = 0
-    global current_level_obj_count = 0
-    
-    global obj_id_array[LEVEL_MAX_OBJECTS]
-    global obj_x_array[LEVEL_MAX_OBJECTS]
-    global obj_y_array[LEVEL_MAX_OBJECTS]
-    global obj_width_array[LEVEL_MAX_OBJECTS]
-    global obj_height_array[LEVEL_MAX_OBJECTS]
-    
-    global prev_level_direction = -1
-    global next_level_direction = -1
-}
+global levels_list[AMOUNT_LEVELS]
+global current_level = 0
+global current_level_obj_count = 0
+
+global obj_id_array[LEVEL_MAX_OBJECTS]
+global obj_x_array[LEVEL_MAX_OBJECTS]
+global obj_y_array[LEVEL_MAX_OBJECTS]
+global obj_width_array[LEVEL_MAX_OBJECTS]
+global obj_height_array[LEVEL_MAX_OBJECTS]
+
+global prev_level_direction = -1
+global next_level_direction = -1
