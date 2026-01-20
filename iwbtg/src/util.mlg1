@@ -31,3 +31,19 @@ fn paste_screen_region(buffer, x, y, rwidth, rheight) {
         point(pixel_x, pixel_y)
     }
 }
+
+fn outline_rect(x, y, w, h) {
+    let right = x + w
+    let bottom = y + h
+    line(x, y, right, y)
+    line(x, y, x, bottom)
+    line(x, bottom, right, bottom)
+    line(right, y, right, bottom)
+}
+
+fn draw_shadow_text(text, x, y, scale, alignment, shadow_distance) {
+    color(32, 32, 32)
+    draw_text(text, FONT, x+shadow_distance, y+shadow_distance, scale, alignment)
+    color(255, 255, 255)
+    draw_text(text, FONT, x, y, scale, alignment)
+}

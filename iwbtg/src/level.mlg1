@@ -1,7 +1,7 @@
 include "iwbtg/src/globals"
 
 
-define LEVEL_OBJ_COUNT_INDEX 2
+define LEVEL_OBJ_COUNT_INDEX 5
 
 define SCREEN_WIDTH_TILES 20
 define SCREEN_HEIGHT_TILES 15
@@ -42,22 +42,17 @@ fn draw_level_object(obj_id, obj_x, obj_y, obj_width, obj_height) {
             )
         }
     }
-    // Draw debug object outline
-    // color(0, 255, 0)
-    // let debug_x = obj_x * TILE_SIZE
-    // let debug_y = obj_y * TILE_SIZE
-    // let debug_right = debug_x + obj_width * TILE_SIZE
-    // let debug_bottom = debug_y + obj_height * TILE_SIZE
-    // line(debug_x, debug_y, debug_right, debug_y)
-    // line(debug_x, debug_bottom, debug_right, debug_bottom)
-    // line(debug_x, debug_y, debug_x, debug_bottom)
-    // line(debug_right, debug_y, debug_right, debug_bottom)
+
+    if debug_mode_enabled {
+        // Draw object outline
+        color(0, 255, 0)
+        outline_rect(obj_x*TILE_SIZE, obj_y*TILE_SIZE, obj_width*TILE_SIZE, obj_height*TILE_SIZE)
+    }
 }
 
 
 fn draw_current_level() {
     // Draw background
-    color(90, 150, 240)
     rect(0, 0, WIDTH, HEIGHT)
     
     // Draw objects
@@ -99,6 +94,10 @@ fn load_current_level(direction) {
 
     prev_level_direction = get(level_data_pointer)
     next_level_direction = get(level_data_pointer+1)
+    let bg_color_b = get(level_data_pointer+2)
+    let bg_color_g = get(level_data_pointer+3)
+    let bg_color_r = get(level_data_pointer+4)
+    color(bg_color_r, bg_color_g, bg_color_b)  // Set bg color here
 
     level_data_pointer = level_data_pointer + LEVEL_OBJ_COUNT_INDEX
     current_level_obj_count = get(level_data_pointer)

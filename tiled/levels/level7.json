@@ -452,6 +452,11 @@
  "orientation":"orthogonal",
  "properties":[
         {
+         "name":"bg_color",
+         "type":"color",
+         "value":"#ff5a4035"
+        }, 
+        {
          "name":"next_direction",
          "type":"string",
          "value":"down"

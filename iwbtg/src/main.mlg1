@@ -35,6 +35,10 @@ fn tick() {
             draw_kid()
             draw_bullets()
         }
+
+        if !game_is_finished {
+            game_timer = game_timer + 1
+        }
     }
     else {
         blood_particles_tick()

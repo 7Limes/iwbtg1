@@ -1,6 +1,12 @@
 include "math"
+include "string"
 include "iwbtg/src/globals"
 include "iwbtg/src/level"
+include "output"
+
+
+define ZERO_CHAR 48  // '0'
+define TIME_SCALE 100
 
 
 fn update_kid_animation_data(anim_data) {
@@ -120,12 +126,8 @@ fn draw_death_text() {
     let death_text_1 = "YOU DIED"
     let death_text_2 = "Press ENTER to Restart"
 
-    color(32, 32, 32)
-    draw_text(death_text_1, FONT, 323, 103, 3, TEXT_ALIGN_CENTER)
-    draw_text(death_text_2, FONT, 322, 152, 2, TEXT_ALIGN_CENTER)
-    color(255, 255, 255)
-    draw_text(death_text_1, FONT, 320, 100, 3, TEXT_ALIGN_CENTER)
-    draw_text(death_text_2, FONT, 320, 150, 2, TEXT_ALIGN_CENTER)
+    draw_shadow_text(death_text_1, 320, 100, 3, TEXT_ALIGN_CENTER, 3)
+    draw_shadow_text(death_text_2, 320, 150, 2, TEXT_ALIGN_CENTER, 2)
 }
 
 
@@ -170,8 +172,11 @@ fn collide_kid(do_x_collision) {
                 obj_y = obj_y + SPIKE_HITBOX_MOD
                 obj_height = obj_height - SPIKE_HITBOX_MOD * 2
             }
-            // color(255, 0, 0)
-            // rect(obj_x / COORD_SCALE, obj_y / COORD_SCALE, obj_width / COORD_SCALE, obj_height / COORD_SCALE)
+
+            if debug_mode_enabled {
+                color(255, 0, 0)
+                outline_rect(obj_x / COORD_SCALE, obj_y / COORD_SCALE, obj_width / COORD_SCALE, obj_height / COORD_SCALE)
+            }
         }
 
         if (obj_x < kid_x + KID_WIDTH) * (kid_x < obj_x + obj_width) *
@@ -432,11 +437,12 @@ fn next_level_tick() {
         direction = ENUM_LEFT
     }
 
-    if !(direction == -1) {
+    if direction != -1 {
         level_change = -(prev_level_direction == direction) + (next_level_direction == direction)    
         if level_change {
             current_level = current_level + level_change
             load_current_level(direction)
+            check_finish_game()
             copy_kid_pixels()
         }
     }
@@ -445,7 +451,13 @@ fn next_level_tick() {
 
 fn reset_tick() {
     if CONTROL1 * !prev_CONTROL1 {
+        // Toggle debug mode
+        if CONTROL2 * LEFT * RIGHT {
+            debug_mode_enabled = !debug_mode_enabled
+        }
+
         paste_kid_pixels()
+        death_counter = death_counter + 1
         kid_is_dead = false
         kid_x = kid_save_x
         kid_y = kid_save_y
@@ -461,8 +473,10 @@ fn reset_tick() {
 
 
 fn draw_kid() {
-    // color(0, 0, 255)
-    // rect(kid_x / COORD_SCALE, kid_y / COORD_SCALE, KID_PIXEL_WIDTH, KID_PIXEL_HEIGHT)
+    if debug_mode_enabled {
+        color(0, 0, 255)
+        outline_rect(kid_x / COORD_SCALE+1, kid_y / COORD_SCALE+1, KID_PIXEL_WIDTH-2, KID_PIXEL_HEIGHT-2)
+    }
 
     kid_anim_timer = (kid_anim_timer + DELTA) % (kid_anim_frames * kid_anim_frame_interval)
     let current_frame_x = kid_anim_timer / kid_anim_frame_interval * KID_PIXEL_WIDTH
@@ -472,4 +486,55 @@ fn draw_kid() {
         current_frame_x, 0, KID_PIXEL_WIDTH, KID_PIXEL_HEIGHT, 
         kid_facing_left
     )
+}
+
+
+fn check_finish_game() {
+    if current_level == ENDING_LEVEL {
+        game_is_finished = true
+
+        let time_string = "Time: %i:%s.%s"
+        let deaths_string = "Deaths: %i"
+
+        let deaths_string_formatted[32]
+        let time_string_formatted[64]
+        let zero_pad_buffer[6]
+
+        let time_us = game_timer * 1667
+        let minutes = time_us / (60000 * TIME_SCALE)
+        time_us = time_us % (60000 * TIME_SCALE)
+        let seconds = time_us / (1000 * TIME_SCALE)
+        let ms = time_us % (1000 * TIME_SCALE) / TIME_SCALE
+        format(time_string_formatted, time_string, minutes)
+
+        // Add padding zeros to seconds and milliseconds
+        let seconds_buffer = zero_pad_buffer+1
+        int_to_str(seconds_buffer, seconds)
+        if seconds < 10 {
+            seconds_buffer = seconds_buffer-1
+            set(seconds_buffer, 2)
+            set(seconds_buffer+1, ZERO_CHAR)
+        }
+        format(time_string_formatted, time_string_formatted, seconds_buffer)
+
+        let ms_buffer = zero_pad_buffer+2
+        int_to_str(ms_buffer, ms)
+        if ms < 10 {
+            ms_buffer = ms_buffer-2
+            set(ms_buffer, 3)
+            set(ms_buffer+1, ZERO_CHAR)
+            set(ms_buffer+2, ZERO_CHAR)
+        }
+        else if ms < 100 {
+            ms_buffer = ms_buffer-1
+            set(ms_buffer, 3)
+            set(ms_buffer+1, ZERO_CHAR)
+        }
+        format(time_string_formatted, time_string_formatted, ms_buffer)
+
+        format(deaths_string_formatted, deaths_string, death_counter)
+
+        draw_shadow_text(time_string_formatted, 620, 20, 2, TEXT_ALIGN_RIGHT, 2)
+        draw_shadow_text(deaths_string_formatted, 620, 50, 2, TEXT_ALIGN_RIGHT, 2)
+    }
 }

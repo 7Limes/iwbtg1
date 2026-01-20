@@ -5,7 +5,7 @@ Converts tiled map files into a level.dat file that can be read by the game.
 import os
 import json
 import re
-from construct import Struct, Int8ub, Int8sb, Array, this
+from construct import Struct, Int8ub, Int8sb, Int24ub, Array, this
 from collections import Counter
 
 
@@ -17,6 +17,8 @@ TILE_SIZE = 32
 SCREEN_WIDTH = 20
 SCREEN_HEIGHT = 15
 DEFAULT_TILE_ID = 6
+
+DEFAULT_BG_COLOR = (90, 150, 240)
 
 DIRECTION_LOOKUP = {
     'up': 0,
@@ -38,6 +40,7 @@ LevelDataStruct = Struct(
     'meta' / Struct(
         'prev_direction' / Int8ub,
         'next_direction' / Int8ub,
+        'bg_color' / Int24ub
     ),
     'object_count' / Int8ub,
     'objects' / Array(this.object_count, LevelObjectStruct)
@@ -88,11 +91,22 @@ def convert_level_json(level_json: dict) -> dict:
             'height': obj_height
         }
         converted_objects.append(converted_obj)
+    
+    # Convert bg color
+    bg_color = properties.get('bg_color')
+    if bg_color is not None:
+        bg_color = bg_color[3:]
+        bg_color = tuple(int(bg_color[i:i+2], 16) for i in (0, 2, 4))
+    else:
+        bg_color = DEFAULT_BG_COLOR
+    
+    bg_color_int = bg_color[0] + bg_color[1] * 256 + bg_color[2] * 65536
 
     return {
         'meta': {
             'prev_direction': DIRECTION_LOOKUP[properties['prev_direction']],
-            'next_direction': DIRECTION_LOOKUP[properties['next_direction']] 
+            'next_direction': DIRECTION_LOOKUP[properties['next_direction']],
+            'bg_color': bg_color_int
         },
         'object_count': len(objects),
         'objects': converted_objects

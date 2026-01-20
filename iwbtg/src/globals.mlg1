@@ -49,6 +49,7 @@ define SAVE_BLOCK_HIT_ID 10
 define SAVE_BLOCK_HIT_SPRITE_DURATION 1000
 
 define AMOUNT_LEVELS 20  // Space allocated for level data
+define ENDING_LEVEL 18   // The final level
 define LEVEL_MAX_OBJECTS 100
 
 
@@ -118,7 +119,7 @@ global ANIM_KID_FALL[3] = [SS_KID_FALL, 2, 100]
 // General globals
 
 global levels_list[AMOUNT_LEVELS]
-global current_level = 0
+global current_level = 17
 global current_level_obj_count = 0
 
 global obj_id_array[LEVEL_MAX_OBJECTS]
@@ -129,3 +130,9 @@ global obj_height_array[LEVEL_MAX_OBJECTS]
 
 global prev_level_direction = -1
 global next_level_direction = -1
+
+global game_is_finished = false
+global death_counter = 0
+global game_timer = 0
+
+global debug_mode_enabled = false
