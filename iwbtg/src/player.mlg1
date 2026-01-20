@@ -497,7 +497,7 @@ fn check_finish_game() {
         let deaths_string = "Deaths: %i"
 
         let deaths_string_formatted[32]
-        let time_string_formatted[64]
+        let time_string_formatted[32]
         let zero_pad_buffer[6]
 
         let time_us = game_timer * 1667
