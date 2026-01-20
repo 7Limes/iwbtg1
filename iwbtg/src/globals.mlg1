@@ -119,7 +119,7 @@ global ANIM_KID_FALL[3] = [SS_KID_FALL, 2, 100]
 // General globals
 
 global levels_list[AMOUNT_LEVELS]
-global current_level = 17
+global current_level = 0
 global current_level_obj_count = 0
 
 global obj_id_array[LEVEL_MAX_OBJECTS]
