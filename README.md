@@ -22,3 +22,8 @@ You can use the `run.sh` file to compile and run the game, so long as you have t
 - `mlg1` -- [mlg1 compiler](https://github.com/7Limes/mlg1)
 - `g1a` -- [g1 assembler](https://github.com/7Limes/g1asm)
 - `cg1` -- [g1 virtual machine](https://github.com/7Limes/cg1)
+
+
+## Editing Maps
+
+You can modify the game's maps using the [Tiled map editor](https://www.mapeditor.org) and then compile them using the `levels.py` script. Just make sure you install the required Python modules from `requirements.txt`.
